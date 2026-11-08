@@ -1,32 +1,26 @@
-# Integração com o GNOME Shell 50
+# GNOME Shell 50 integration
 
-Conferido contra o código do gnome-shell 50.5 instalado (extraído de
-`/usr/lib64/gnome-shell/libshell-18.so` com `gresource extract`).
+Verified against the installed gnome-shell 50.5 source (extracted from `/usr/lib64/gnome-shell/libshell-18.so` with `gresource extract`).
 
-| Necessidade | API usada | Onde |
+| Need | API used | Location |
 | --- | --- | --- |
-| Apps instalados | `Shell.AppSystem.get_installed()`, `lookup_app(id).activate()`, sinal `installed-changed` | `shellAppCatalog.ts` |
-| Frequência de uso | `Shell.AppUsage.get_most_used()` | `shellAppCatalog.ts` |
-| Janelas | `global.display.get_tab_list(Meta.TabList.NORMAL_ALL, null)`, `Shell.WindowTracker`, `Main.activateWindow` | `shellWindowCatalog.ts` |
-| Ações do sistema | `misc/systemActions.js` `getMatchingActions`, `getName`, `getIconName`, `activateAction` | `shellSystemActionCatalog.ts` |
-| Pastas | `Gio.File.enumerate_children_async` + `next_files_async` (promisificados) | `gioDirectoryReader.ts` |
-| Abrir URL e arquivo | `Gio.AppInfo.launch_default_for_uri` com `global.create_app_launch_context` | `shellLauncher.ts` |
-| Área de transferência | `St.Clipboard.get_default().set_text(CLIPBOARD, ...)` | `stClipboard.ts` |
-| Rodar comando | `misc/util.js` `trySpawn` | `shellCommandRunner.ts` |
-| Atalho global | `Main.wm.addKeybinding` / `removeKeybinding` | `launcherSession.ts` |
-| Janela modal | `Main.pushModal(actor, {actionMode: SYSTEM_MODAL})`, ator em `Main.layoutManager.modalDialogGroup` | `launcherOverlay.ts` |
-| Blur do painel | Blur my Shell: classe `clipboard-dialog` no painel; detecção por `global.blur_my_shell` | `launcherOverlay.ts`, `blurProvider.ts` |
-| Rolagem até a linha | `misc/animationUtils.js` `ensureActorVisibleInScrollView` | `launcherOverlay.ts` |
-| CSS claro/escuro | O Shell carrega `stylesheet-<variante>.css` antes de `stylesheet.css` (`extensionSystem.js`) | `scripts/build.ts` |
-| Tradução | `this.gettext` da instância de `Extension` | `extension.ts` |
+| Installed apps | `Shell.AppSystem.get_installed()`, `lookup_app(id).activate()`, `installed-changed` signal | `shellAppCatalog.ts` |
+| Usage frequency | `Shell.AppUsage.get_most_used()` | `shellAppCatalog.ts` |
+| Windows | `global.display.get_tab_list(Meta.TabList.NORMAL_ALL, null)`, `Shell.WindowTracker`, `Main.activateWindow` | `shellWindowCatalog.ts` |
+| System actions | `misc/systemActions.js` `getMatchingActions`, `getName`, `getIconName`, `activateAction` | `shellSystemActionCatalog.ts` |
+| Directories | `Gio.File.enumerate_children_async` + `next_files_async` (promisified) | `gioDirectoryReader.ts` |
+| Open URLs and files | `Gio.AppInfo.launch_default_for_uri` with `global.create_app_launch_context` | `shellLauncher.ts` |
+| Clipboard | `St.Clipboard.get_default().set_text(CLIPBOARD, ...)` | `stClipboard.ts` |
+| Run a command | `misc/util.js` `trySpawn` | `shellCommandRunner.ts` |
+| Global shortcut | `Main.wm.addKeybinding` / `removeKeybinding` | `launcherSession.ts` |
+| Modal window | `Main.pushModal(actor, {actionMode: SYSTEM_MODAL})`, actor in `Main.layoutManager.modalDialogGroup` | `launcherOverlay.ts` |
+| Panel blur | Blur my Shell: `clipboard-dialog` class on the panel; detected through `global.blur_my_shell` | `launcherOverlay.ts`, `blurProvider.ts` |
+| Scroll to a row | `misc/animationUtils.js` `ensureActorVisibleInScrollView` | `launcherOverlay.ts` |
+| Light/dark CSS | The Shell loads `stylesheet-<variant>.css` before `stylesheet.css` (`extensionSystem.js`) | `scripts/build.ts` |
+| Translation | `this.gettext` from the `Extension` instance | `extension.ts` |
 
-## Observações
+## Notes
 
-- O `gettext` exportado por `extension.js` descobre a extensão pela pilha de chamadas. Com o
-  bundle funciona, mas a extensão passa `this.gettext` da instância, que não depende disso.
-- A janela abre no monitor onde está o ponteiro (`Main.layoutManager.currentMonitor`), com
-  o topo a 25% da altura. O fundo é preso a esse monitor por `Layout.MonitorConstraint`: o
-  `modalDialogGroup` usa `BinLayout` e ignora posição e tamanho fixos do filho.
-  Com a Visão geral aberta, ela fecha a Visão geral antes.
-- Shell 50 já tem toggle de "Não perturbe"; não tem relação com esta extensão, mas aparece
-  nas mesmas fontes consultadas.
+- The `gettext` exported by `extension.js` finds the extension from the call stack. This works with a bundle, but the extension passes `this.gettext` from its instance, which does not depend on that behavior.
+- The window opens on the monitor containing the pointer (`Main.layoutManager.currentMonitor`), with its top at 25% of the screen height. `Layout.MonitorConstraint` attaches the backdrop to that monitor: `modalDialogGroup` uses `BinLayout` and ignores fixed child position and size. If the Overview is open, it is closed first.
+- Shell 50 already has a “Do Not Disturb” toggle. It is unrelated to this extension but appears in the same sources consulted.

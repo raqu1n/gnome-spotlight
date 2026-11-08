@@ -82,4 +82,4 @@ await formatModules(transpileReachableModules());
 writeStylesheets();
 await copyStatic();
 await compileTranslations();
-console.log(`Extensão montada em ${DIST}`);
+console.log(`Extension built in ${DIST}`);

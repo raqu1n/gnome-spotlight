@@ -1,6 +1,6 @@
 /**
- * Instala o `dist/` em ~/.local/share/gnome-shell/extensions/<uuid>. No Wayland o Shell só
- * carrega extensão nova (ou código novo) depois de sair e entrar na sessão.
+ * Installs `dist/` in ~/.local/share/gnome-shell/extensions/<uuid>. On Wayland, the Shell only
+ * loads a new extension (or updated code) after logging out and back in.
  */
 import { cpSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { homedir } from "node:os";

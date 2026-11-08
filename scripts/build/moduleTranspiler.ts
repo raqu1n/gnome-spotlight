@@ -27,7 +27,7 @@ export const toRelativeImport = (fromModule: string, toModule: string): string =
 
 const resolveAlias = (specifier: string, aliases: SourceAliases): string => {
   const alias = Object.keys(aliases).find((prefix) => specifier.startsWith(prefix));
-  if (alias === undefined) throw new Error(`Alias sem destino em src: ${specifier}`);
+  if (alias === undefined) throw new Error(`Alias has no target in src: ${specifier}`);
 
   return `${aliases[alias]}${specifier.slice(alias.length)}`;
 };

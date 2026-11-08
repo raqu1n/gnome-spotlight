@@ -1,82 +1,69 @@
-# Launchpad Search para GNOME Shell
+# Launchpad Search for GNOME Shell
 
-Barra de busca no Super+Alt+Espaço. Digite e ela acha apps, janelas abertas, faz contas, roda
-comandos, navega por pastas, dispara ações do sistema e pesquisa na web.
+Open the search bar with Super+Alt+Space. Type to find apps and open windows, calculate expressions, run commands, browse directories, trigger system actions, and search the web.
 
-Feita para o GNOME Shell 50 e 51.
+Built for GNOME Shell 50 and 51.
 
-## O que dá para digitar
+## What you can type
 
-| Você digita | O que aparece |
+| Input | Results |
 | --- | --- |
-| `fire` | Apps e janelas abertas que casam com o texto, ações do sistema, e uma conta se o texto for uma |
-| `2 + 3 * 4`, `sqrt(2)`, `15%`, `5!` | O resultado. Enter copia para a área de transferência |
-| `= pi` | Modo calculadora explícito (aceita constante sozinha) |
-| `> htop` | Abre o comando no terminal e deixa o shell aberto para você ler a saída |
-| `$ notify-send oi` | Roda o comando em segundo plano, sem janela |
-| `~/Doc`, `/usr/sh` | Arquivos e pastas daquele caminho. Tab completa, Enter abre |
-| `? gnome shell` | Pesquisa na web |
-| `bloquear`, `suspender` | Ações do sistema (bloquear, suspender, reiniciar, desligar, sair) |
+| `fire` | Matching apps and open windows, system actions, and a calculation when the text is an expression |
+| `2 + 3 * 4`, `sqrt(2)`, `15%`, `5!` | The result. Press Enter to copy it to the clipboard |
+| `= pi` | Explicit calculator mode (accepts a constant by itself) |
+| `> htop` | Run the command in a terminal and leave the shell open so you can read its output |
+| `$ notify-send hello` | Run the command in the background without a window |
+| `~/Doc`, `/usr/sh` | Files and directories at that path. Tab completes; Enter opens |
+| `? gnome shell` | Search the web |
+| `lock`, `suspend` | System actions (lock, suspend, restart, power off, log out) |
 
-Teclas: setas navegam, Enter abre, Tab completa caminho, Esc limpa o texto e o segundo Esc fecha.
-Clicar fora da janela também fecha.
+Use the arrow keys to navigate, Enter to open, Tab to complete a path, and Esc to clear the query. Press Esc again to close the window. Clicking outside the window also closes it.
 
-A janela abre centralizada no monitor onde está o ponteiro, com o topo a 25% da altura. Com o Blur my
-Shell ativo (componente de popups), o painel fica translúcido e desfocado como os outros
-popups do GNOME; sem ele, o painel é sólido.
+The window opens on the monitor containing the pointer, with its top at 25% of the screen height. When Blur my Shell's popup component is active, the panel is translucent and blurred like other GNOME popups; otherwise it is solid.
 
-A calculadora aceita `+ - * / ^`, `×` e `÷`, parênteses, `%` (divide por 100), `!`
-(fatorial), multiplicação implícita (`2pi`, `2(3+1)`), vírgula ou ponto como decimal, as
-constantes `pi`, `tau` e `e`, e as funções `sqrt cbrt abs ln log log2 exp sin cos tan asin
-acos atan round floor ceil`. Se a conta usou vírgula, a resposta vem com vírgula.
+The calculator supports `+ - * / ^`, `×` and `÷`, parentheses, `%` (divide by 100), `!` (factorial), implicit multiplication (`2pi`, `2(3+1)`), comma or period decimals, the constants `pi`, `tau` and `e`, and the functions `sqrt cbrt abs ln log log2 exp sin cos tan asin acos atan round floor ceil`. If an expression uses a comma, the answer uses a comma too.
 
-## Atalho
+## Shortcut
 
-O padrão é Super+Alt+Espaço. Dá para trocar nas preferências (linha "Atalho", botão
-"Alterar", pressione a combinação; Backspace deixa sem atalho).
+The default is Super+Alt+Space. Change it in Preferences: choose the Shortcut row, click Change, then press the key combination. Backspace clears the shortcut.
 
-A extensão não mexe nos atalhos do sistema. Para usar Super+Espaço, tire antes esse atalho de
-"Trocar para a próxima fonte de entrada" em Configurações > Teclado > Atalhos.
+The extension does not change system shortcuts. To use Super+Space, first remove that shortcut from “Switch to the next input source” in Settings > Keyboard > Shortcuts.
 
-## Preferências
+## Preferences
 
-- Atalho
-- Máximo de resultados (3 a 20, padrão 8)
-- Endereço da busca na web, com `%s` no lugar do texto (padrão Google)
-- Cola dos prefixos
+- Shortcut
+- Maximum results (3 to 20, default 8)
+- Web search URL, using `%s` for the query (Google by default)
+- Prefix key hints
 
-## Instalação
+## Installation
 
 ```bash
 bun install
-bun run install:local   # build + cópia para ~/.local/share/gnome-shell/extensions
+bun run install:local   # build and copy to ~/.local/share/gnome-shell/extensions
 gnome-extensions enable launchpad-search@mateusseiboth.github.io
 ```
 
-No Wayland o Shell só carrega extensão nova, ou código novo de uma já carregada, depois de
-sair e entrar na sessão.
+On Wayland, the Shell loads a new extension or updated code only after you log out and back in.
 
-## Desenvolvimento
+## Development
 
 ```bash
 bun run format:check   # oxfmt
 bun run lint           # oxlint --type-aware
-bun run typecheck      # TypeScript 7, três projetos (src, test, scripts)
-bun test               # domínio, provedores, serviço e presenter
-bun run build          # dist/ pronto para o Shell
-bun run pack           # build + zip para o extensions.gnome.org
-bun scripts/extract-messages.ts   # regenera po/launchpad-search.pot
+bun run typecheck      # TypeScript 7, three projects (src, test, scripts)
+bun test               # domain, providers, service, and presenter
+bun run build          # prepare dist/ for the Shell
+bun run pack           # build a zip for extensions.gnome.org
+bun scripts/extract-messages.ts   # regenerate po/launchpad-search.pot
 ```
 
-O build transpila cada módulo de `src/` para um `.js` em `dist/` (mesma árvore, imports
-relativos, sem comentários) e formata com o oxfmt. O código enviado ao extensions.gnome.org
-fica legível para a revisão.
+The build transpiles each reachable module in `src/` to a `.js` file in `dist/` (same directory structure, relative imports, no comments) and formats it with oxfmt. The code submitted to extensions.gnome.org remains readable for review.
 
-O `pack` gera `launchpad-search@mateusseiboth.github.io.shell-extension.zip` sem o
-`gschemas.compiled`: o Shell compila o schema ao instalar pelo site.
+`pack` creates `launchpad-search@mateusseiboth.github.io.shell-extension.zip` without `gschemas.compiled`; the Shell compiles the schema during installation from the website.
 
-A arquitetura, as regras de busca e o que foi descoberto sobre o Shell 50 estão em `doc/`.
+The architecture, search rules, and findings about Shell 50 are documented in `doc/`.
 
-## Licença
+## License
 
-GPL-2.0-or-later. Texto em `LICENSE`.
+GPL-2.0-or-later. See `LICENSE`.

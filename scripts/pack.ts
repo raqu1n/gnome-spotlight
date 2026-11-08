@@ -13,4 +13,4 @@ const archive = join(ROOT, `${uuid}.shell-extension.zip`);
 
 rmSync(archive, { force: true });
 await $`zip -qr ${archive} . -x schemas/gschemas.compiled`.cwd(DIST);
-console.log(`Pacote para o extensions.gnome.org: ${archive}`);
+console.log(`Package for extensions.gnome.org: ${archive}`);

@@ -1,72 +1,34 @@
-# launchpad-search (repositório gnome-spotlight)
+# launchpad-search (gnome-spotlight repository)
 
-Extensão do GNOME Shell 50 e 51 em TypeScript 7, publicada no extensions.gnome.org como
-"Launchpad Search". Leia `doc/` antes de mexer: lá estão a arquitetura, as regras de busca e
-as armadilhas do Shell.
+GNOME Shell 50 and 51 extension written in TypeScript 7, published on extensions.gnome.org as “Launchpad Search.” Read `doc/` before making changes: it contains the architecture, search rules, and Shell pitfalls.
 
-O nome da loja só aparece em `metadata.json`, no id do schema, no domínio de tradução e no
-prefixo do log. Classes, arquivos e classes CSS usam o nome genérico `Launcher`/`launcher-`.
+The store name appears only in `metadata.json`, the schema ID, the translation domain, and the log prefix. Classes, files, and CSS classes use the generic `Launcher`/`launcher-` name.
 
-## Regras deste repositório
+## Repository rules
 
-- Camadas: `domain/` (puro), `service/` (orquestração), `provider/` (strategies de busca),
-  `infra/gnome/` (único lugar que fala com `gi://` e com o Shell), `ui/` (presenter puro +
-  view St), `app/` (raiz de composição), `prefs/` (GTK 4). Domínio, serviço, provedores e o
-  presenter NUNCA importam valor de `gi://` ou `resource://`, só `import type`. É isso que
-  deixa o `bun test` rodar sem GNOME.
-- Imports sempre por alias (`@domain/*`, `@service/*`...). Os aliases existem em
-  `tsconfig.base.json` E `bunfig.toml`. O build transpila cada módulo alcançável a partir de
-  `extension.ts` e `prefs.ts` para um `.js` em `dist/`, troca o alias por caminho relativo
-  (`scripts/build/moduleTranspiler.ts`, aliases lidos do `tsconfig.base.json`) e formata com
-  o oxfmt. Nada de bundle em arquivo único: o revisor do extensions.gnome.org lê o `dist/`.
-- `src/` não tem comentário (o teste `sourceComments` reprova). O porquê das decisões mora
-  em `doc/` e nas armadilhas abaixo. Revisor do extensions.gnome.org rejeita código com
-  cara de prompt de LLM.
-- A extensão não altera configuração de outro schema (atalho do sistema, por exemplo). O
-  atalho padrão é Super+Alt+Espaço justamente para não brigar com "trocar fonte de entrada".
-- Fonte nova de busca = classe nova em `src/provider/` + uma linha em
-  `searchProviderFactory.ts`. Nada de `if` por tipo no serviço.
-- Texto de tela vai em inglês no código, marcado com `t("...")` (domínio) ou `_("...")`
-  (UI e prefs), sempre com aspas duplas e texto literal. O teste `messageCatalog` reprova
-  mensagem sem tradução em `po/pt_BR.po`, tradução órfã e travessão.
-- CSS só no molde de `src/style/stylesheet.ts`; claro e escuro saem do mesmo molde.
-- Portão de saída: `bun run format:check && bun run lint && bun run typecheck && bun test`.
-- Envio: `bun run pack` gera o zip sem `gschemas.compiled` (o Shell compila ao instalar).
+- Layers: `domain/` (pure), `service/` (orchestration), `provider/` (search strategies), `infra/gnome/` (the only layer that talks to `gi://` and the Shell), `ui/` (pure presenter and St view), `app/` (composition root), `prefs/` (GTK 4). The domain, service, providers, and presenter NEVER import values from `gi://` or `resource://`, only `import type`. This keeps `bun test` runnable without GNOME.
+- Always import through aliases (`@domain/*`, `@service/*`, etc.). The aliases are defined in both `tsconfig.base.json` AND `bunfig.toml`. The build transpiles every module reachable from `extension.ts` and `prefs.ts` to a `.js` file in `dist/`, replaces aliases with relative paths (`scripts/build/moduleTranspiler.ts`, aliases read from `tsconfig.base.json`), and formats with oxfmt. Do not bundle everything into one file: extensions.gnome.org reviewers read `dist/`.
+- `src/` contains no comments (the `sourceComments` test rejects them). Keep the reasoning behind decisions in `doc/` and the pitfalls below. extensions.gnome.org reviewers reject code that looks AI-generated.
+- The extension does not change another schema's settings (for example, system shortcuts). The default shortcut is Super+Alt+Space to avoid conflicting with “switch to the next input source.”
+- A new search source means a new class in `src/provider/` and one line in `searchProviderFactory.ts`. Do not add type-based `if` statements to the service.
+- On-screen text in the code is English and marked with `t("...")` (domain) or `_("...")` (UI and preferences), always with double quotes and literal text. The `messageCatalog` test rejects messages missing from `po/pt_BR.po`, orphan translations, and em dashes.
+- CSS belongs in the template in `src/style/stylesheet.ts`; light and dark themes come from the same template.
+- Release gate: `bun run format:check && bun run lint && bun run typecheck && bun test`.
+- Packaging: `bun run pack` creates the zip without `gschemas.compiled` (the Shell compiles it during installation).
 
-## Armadilhas que já custaram tempo
+## Pitfalls that have already cost time
 
-- Typecheck em três projetos (`tsconfig.json` para src, `test/tsconfig.json`,
-  `scripts/tsconfig.json`). O `@types/bun` declara o `global` do Node, que colide com o
-  `global` do Shell. E o tsgolint usa o `tsconfig.json` mais próximo de cada arquivo, por
-  isso cada pasta tem o seu.
-- `@girs/gnome-shell` 50.0.4 não declara `Util.trySpawn` nem os métodos públicos de
-  `SystemActions`. Os adaptadores usam um contrato mínimo com cast na fronteira.
-- `Gio.DesktopAppInfo` agora é `GioUnix.DesktopAppInfo`.
-- No Shell 50 o `Main.pushModal` não devolve mais estado de grab (`Clutter.GrabState` sumiu).
-- Mudança só aparece no Shell real depois de logout/login (Wayland).
-- A captura de atalho nas preferências pede `inhibit_system_shortcuts` à janela. Sem isso o
-  Shell consome qualquer atalho global (o próprio atalho da busca, inclusive) antes de a
-  janela de preferências receber a tecla.
-- Posição do painel é explícita (`AlignConstraint` no X, `y` calculado). Com `BinLayout` +
-  `y_align: START` o Shell 50 centralizou o painel e o jogou para baixo do meio da tela.
-- O `modalDialogGroup` usa `BinLayout`: `set_position`/`set_size` no fundo da busca não
-  valem nada e ele cobre todos os monitores (o painel caía na emenda entre dois). Quem
-  prende o fundo ao monitor do ponteiro é o `Layout.MonitorConstraint`, como no `ModalDialog`.
-- Blur é do Blur my Shell, não nosso. O componente de popups dele vigia o
-  `modalDialogGroup` e desfoca, com cantos arredondados, atores com classe de diálogo; o
-  painel leva `clipboard-dialog` (o tema do GNOME não estiliza essa classe). Sem o Blur my
-  Shell o painel fica sólido (`resolvePanelSurface`). O raio do painel (18px) precisa bater
-  com o `dialog-corner-radius` dele. Já tentado e descartado: `Shell.BlurEffect` próprio
-  (sem raio de canto, sobra quina quadrada; e desfocar a tela inteira não é o efeito
-  desejado).
-- Regra do tema GANHA da folha da extensão quando as duas estilizam a mesma propriedade
-  (o anel de `StEntry:focus` continuou mesmo com `!important` na nossa). Para mudar
-  propriedade que o tema já define num ator nativo, use estilo inline (`style:` /
-  `set_style`), que o St aplica por último.
+- Typechecking spans three projects (`tsconfig.json` for src, `test/tsconfig.json`, `scripts/tsconfig.json`). `@types/bun` declares Node's `global`, which conflicts with the Shell's `global`. Also, tsgolint uses the nearest `tsconfig.json` for each file, so each directory has its own.
+- `@girs/gnome-shell` 50.0.4 does not declare `Util.trySpawn` or the public `SystemActions` methods. Adapters use a minimal contract with a cast at the boundary.
+- `Gio.DesktopAppInfo` is now `GioUnix.DesktopAppInfo`.
+- In Shell 50, `Main.pushModal` no longer returns grab state (`Clutter.GrabState` was removed).
+- Changes appear in the real Shell only after logging out and back in (Wayland).
+- Shortcut capture in Preferences must request `inhibit_system_shortcuts` from the window. Otherwise, the Shell consumes every global shortcut (including the search shortcut itself) before the Preferences window receives the key.
+- Panel position is explicit (`AlignConstraint` on X, calculated `y`). With `BinLayout` and `y_align: START`, Shell 50 centered the panel and moved it below the middle of the screen.
+- `modalDialogGroup` uses `BinLayout`: `set_position` and `set_size` on the search backdrop have no effect, and the group covers every monitor (the panel landed across the seam between two). `Layout.MonitorConstraint`, as used by `ModalDialog`, attaches the backdrop to the pointer's monitor.
+- Blur comes from Blur my Shell. Its popup component watches `modalDialogGroup` and blurs actors with a dialog class, including rounded corners. The panel uses `clipboard-dialog` (the GNOME theme does not style this class). Without Blur my Shell the panel is solid (`resolvePanelSurface`). The panel's 18px radius must match its `dialog-corner-radius`. A custom `Shell.BlurEffect` was tried and discarded: it has no corner radius, leaving square corners, and blurring the entire screen is not the desired effect.
+- The theme's rule WINS over the extension stylesheet when both set the same property (the `StEntry:focus` ring remained even with `!important` in ours). To change a property already set by the theme on a native actor, use inline styling (`style:` / `set_style`), which St applies last.
 
-## Duplicado de propósito
+## Intentional duplication
 
-`scripts/build.ts`, `scripts/pack.ts`, `scripts/build/moduleTranspiler.ts` (e o teste dele),
-o teste `sourceComments`, `scripts/i18n/messageCatalog.ts`, `scripts/install.ts`, as configs
-de oxlint/oxfmt e `src/types/*.d.ts` existem iguais no repositório
-`quick-settings-notifications`. Alterou um, replique no outro na mesma tarefa.
+`scripts/build.ts`, `scripts/pack.ts`, `scripts/build/moduleTranspiler.ts` (and its test), the `sourceComments` test, `scripts/i18n/messageCatalog.ts`, `scripts/install.ts`, the oxlint/oxfmt configs, and `src/types/*.d.ts` are identical in the `quick-settings-notifications` repository. If you change one, make the same change there in the same task.

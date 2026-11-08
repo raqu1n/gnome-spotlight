@@ -1,47 +1,36 @@
-# Arquitetura
+# Architecture
 
-## Fluxo de uma busca
+## Search flow
 
-1. `LauncherOverlay` (St) recebe o texto da caixa e chama `LauncherPresenter.onQueryChanged`.
-2. O presenter pede um token ao `LatestRequestGate` e chama `SearchService.search`.
-3. O serviço lê o modo com `parseQuery` (prefixo), filtra os provedores que atendem o modo e
-   consulta todos em paralelo com `Promise.allSettled`.
-4. Junta os resultados, mantém o de maior nota quando dois têm o mesmo `id`, ordena por nota
-   e depois por título, corta no limite das preferências.
-5. Se o token ainda é o mais novo, o presenter manda a view desenhar. Resposta atrasada
-   (pasta lenta) é descartada.
-6. Enter ou clique: o presenter FECHA a janela e só depois chama `result.activate()`. Fechar
-   antes devolve o foco às janelas, senão o app recém-aberto nasce atrás.
+1. `LauncherOverlay` (St) receives the query text and calls `LauncherPresenter.onQueryChanged`.
+2. The presenter requests a token from `LatestRequestGate` and calls `SearchService.search`.
+3. The service reads the mode with `parseQuery` (prefix), filters providers for that mode, and queries them in parallel with `Promise.allSettled`.
+4. It combines the results, keeps the highest-scoring result when two share an `id`, sorts by score and then title, and applies the preferences limit.
+5. If the token is still the newest, the presenter tells the view to render. Late responses (such as a slow directory) are discarded.
+6. On Enter or click, the presenter closes the window before calling `result.activate()`. Closing first restores focus to other windows; otherwise the newly opened app appears behind the launcher.
 
-## Camadas
+## Layers
 
-| Pasta | Papel | Pode importar valor de `gi://`? |
+| Directory | Role | May import `gi://` values? |
 | --- | --- | --- |
-| `src/domain` | Regras puras: casamento de texto, calculadora, caminhos, terminal, atalho | Não |
-| `src/service` | `SearchService` | Não |
-| `src/provider` | Uma strategy por fonte de resultado + a factory | Não |
-| `src/ui/launcherPresenter.ts` | Interação (setas, Enter, Tab, Esc) | Não |
-| `src/ui` (resto) | View St | Sim |
-| `src/infra/gnome` | Adaptadores das portas (`AppCatalog`, `WindowCatalog`...) | Sim |
-| `src/app` | `LauncherSession`, a raiz de composição | Sim |
-| `src/prefs` | Linha de captura de atalho (GTK 4) | Sim |
+| `src/domain` | Pure rules: text matching, calculator, paths, terminal, shortcut | No |
+| `src/service` | `SearchService` | No |
+| `src/provider` | One strategy per result source, plus the factory | No |
+| `src/ui/launcherPresenter.ts` | Interaction (arrows, Enter, Tab, Esc) | No |
+| `src/ui` (rest) | St view | Yes |
+| `src/infra/gnome` | Port adapters (`AppCatalog`, `WindowCatalog`...) | Yes |
+| `src/app` | `LauncherSession`, the composition root | Yes |
+| `src/prefs` | Shortcut capture row (GTK 4) | Yes |
 
-As portas ficam em `src/domain/*/…Ports.ts`. Cada adaptador do Shell implementa uma.
-Os testes usam portas falsas em `test/support/fakes.ts`.
+Ports live in `src/domain/*/…Ports.ts`. Each Shell adapter implements one. Tests use fake ports in `test/support/fakes.ts`.
 
-## Ciclo de vida
+## Lifecycle
 
-`enable()` cria a `LauncherSession` e chama `start()`, que registra o atalho com
-`Main.wm.addKeybinding`. O mutter relê a chave sozinho quando o atalho muda nas preferências.
-`disable()` chama `stop()`, que remove o atalho, destrói a view e solta o sinal do `AppSystem`.
+`enable()` creates a `LauncherSession` and calls `start()`, which registers the shortcut with `Main.wm.addKeybinding`. Mutter reloads the key automatically when the shortcut changes in Preferences. `disable()` calls `stop()`, which removes the shortcut, destroys the view, and disconnects the `AppSystem` signal.
 
-A extensão não mexe em atalho do sistema. O padrão é Super+Alt+Espaço, que o GNOME não usa;
-Super+Espaço continua sendo "trocar fonte de entrada".
+The extension does not change system shortcuts. The default is Super+Alt+Space, which GNOME does not use; Super+Space remains “switch to the next input source.”
 
-## Decisões
+## Decisions
 
-- Presenter separado da view para poder testar interação sem St. A view só traduz evento em
-  chamada (mapa de teclas em `KEY_ACTIONS`).
-- Ações do sistema usam o `misc/systemActions.js` do Shell. Ele já sabe o que está
-  disponível agora e casa as palavras-chave traduzidas, então a extensão não mantém lista
-  própria.
+- The presenter is separate from the view so interactions can be tested without St. The view only translates events into calls (key mapping in `KEY_ACTIONS`).
+- System actions use the Shell's `misc/systemActions.js`. It knows what is currently available and matches translated keywords, so the extension does not maintain its own list.

@@ -1,6 +1,6 @@
 /**
- * Gera `po/launchpad-search.pot` a partir das mensagens marcadas no código. Depois de
- * rodar, atualize o `pt_BR.po` (o teste de catálogo aponta o que falta e o que sobrou).
+ * Generates `po/launchpad-search.pot` from messages marked in the code. After running it,
+ * update `pt_BR.po` (the catalog test reports missing and obsolete entries).
  */
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";

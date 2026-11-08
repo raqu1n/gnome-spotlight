@@ -1,68 +1,54 @@
-# Regras de busca
+# Search rules
 
-## Modos por prefixo (`src/domain/query/queryParser.ts`)
+## Prefix modes (`src/domain/query/queryParser.ts`)
 
-| Prefixo | Modo | O prefixo fica no termo? |
+| Prefix | Mode | Is the prefix kept in the term? |
 | --- | --- | --- |
-| nenhum | padrão: apps, janelas, conta automática, ações do sistema, web por último | |
-| `=` | calculadora | não |
-| `>` | comando no terminal | não |
-| `$` | comando em segundo plano | não |
-| `?` | web | não |
-| `/` ou `~` | arquivos | sim, faz parte do caminho |
+| none | default: apps, windows, automatic calculation, system actions, web last | |
+| `=` | calculator | no |
+| `>` | command in terminal | no |
+| `$` | background command | no |
+| `?` | web | no |
+| `/` or `~` | files | yes, it is part of the path |
 
-Termo vazio não consulta nenhum provedor.
+An empty term does not query any providers.
 
-## Notas (0 a 1)
+## Scores (0 to 1)
 
-O casamento de texto (`textMatcher.ts`) compara sem acento e sem caixa e usa a primeira
-regra que casar: igual (1), prefixo (0,85 a 0,95), início de palavra (0,7 a 0,8), todas as
-palavras do termo começando palavras do candidato (0,65), substring (0,5 a 0,6), iniciais
-(0,45), letras em ordem (até 0,3). O bônus dentro de cada faixa cresce com a parte do
-candidato que o termo cobre, então `fi` dá nota maior para "Files" do que para "Firefox
-Developer Edition".
+Text matching (`textMatcher.ts`) ignores accents and case, and uses the first matching rule: exact (1), prefix (0.85 to 0.95), word start (0.7 to 0.8), every query word starting a candidate word (0.65), substring (0.5 to 0.6), initials (0.45), letters in order (up to 0.3). Within each range, the bonus grows with the share of the candidate covered by the query, so `fi` scores “Files” higher than “Firefox Developer Edition.”
 
-| Provedor | Como pontua |
+| Provider | Scoring |
 | --- | --- |
-| Apps | Melhor campo ponderado: nome 1, nome genérico e palavras-chave 0,8, executável 0,7, descrição 0,5. 95% da nota vem disso e 5% da frequência de uso (`Shell.AppUsage`), que só desempata |
-| Janelas | Título 0,9, nome do app 0,85, vezes 0,95. Fica sempre abaixo do app de mesmo nome |
-| Calculadora | 0,97 fixo, aparece no topo |
-| Ações do sistema | Nome vezes 0,9, com mínimo de 0,5 (o Shell pode casar só pela palavra-chave) |
-| Comandos | 1 |
-| Web | 1 com `?`; 0,01 no modo padrão, sempre por último |
-| Arquivos | Pasta ganha +0,5. O casamento é arredondado em faixas de 0,1, para nomes parecidos empatarem e caírem em ordem alfabética, como num seletor de arquivos |
+| Apps | Best weighted field: name 1, generic name and keywords 0.8, executable 0.7, description 0.5. 95% of the score comes from this and 5% from usage frequency (`Shell.AppUsage`), which only breaks ties. |
+| Windows | Title 0.9, app name 0.85, multiplied by 0.95. Always below an app with the same name. |
+| Calculator | Fixed at 0.97; shown at the top. |
+| System actions | Name score multiplied by 0.9, with a minimum of 0.5 (the Shell may match only a keyword). |
+| Commands | 1 |
+| Web | 1 with `?`; 0.01 in default mode, always last. |
+| Files | Directories get +0.5. Matching is rounded to 0.1 increments so similar names tie and sort alphabetically, like in a file chooser. |
 
-## Calculadora
+## Calculator
 
-- No modo padrão a conta só aparece se o texto tiver dígito E uma operação (operador,
-  parêntese ou função). Sem essa regra, digitar `e` procurando o Editor colocaria 2,718 no
-  topo.
-- `-2^2` é -4 e `2^-1` é 0,5 (potência acima do sinal, associativa à direita).
-- `%` divide por 100. `200 * 10%` dá 20. Não existe a regra de calculadora de mesa em que
-  `200 + 10%` vira 220.
-- O resultado é arredondado a 12 dígitos significativos, o que limpa o ruído binário
-  (`0.1 + 0.2` dá `0.3`).
-- Divisão por zero, raiz de negativo e fatorial fora de 0 a 170 não geram resultado.
-- Limitação conhecida: `1.000` é lido como 1, não como mil. Separador de milhar não existe.
+- In default mode, a calculation appears only if the text contains a digit and an operation (operator, parenthesis, or function). Without this rule, typing `e` to find the Editor would put 2.718 at the top.
+- `-2^2` is -4 and `2^-1` is 0.5 (exponentiation binds more tightly than the sign and is right-associative).
+- `%` divides by 100. `200 * 10%` gives 20. The desktop calculator rule where `200 + 10%` becomes 220 is not supported.
+- Results are rounded to 12 significant digits to remove binary floating-point noise (`0.1 + 0.2` gives `0.3`).
+- Division by zero, square roots of negative numbers, and factorials outside 0 to 170 produce no result.
+- Known limitation: `1.000` is read as 1, not one thousand. Thousands separators are not supported.
 
-## Comandos
+## Commands
 
-- `>` monta `<terminal> <args> sh -c '<comando>; exec "${SHELL:-sh}"'`. O shell no fim mantém
-  a janela aberta.
-- O terminal vem de `org.gnome.desktop.default-applications.terminal`. Se o binário
-  configurado não existir, usa o primeiro disponível de: xdg-terminal-exec, ptyxis, kgx,
-  gnome-terminal, konsole, kitty, alacritty, foot, wezterm, xterm.
-- Sem terminal nenhum, aparece a notificação de erro "Não foi possível abrir o resultado".
+- `>` builds `<terminal> <args> sh -c '<command>; exec "${SHELL:-sh}"'`. The final shell keeps the window open.
+- The terminal comes from `org.gnome.desktop.default-applications.terminal`. If the configured binary is missing, the first available of these is used: xdg-terminal-exec, ptyxis, kgx, gnome-terminal, konsole, kitty, alacritty, foot, wezterm, xterm.
+- If no terminal is available, the error notification “Could not open the result” is shown.
 
-## Arquivos
+## Files
 
-- `~` sozinho lista o home. Barra no fim lista a pasta inteira.
-- Arquivo escondido só aparece se o trecho digitado começar com ponto.
-- Lê no máximo 500 itens da pasta, de forma assíncrona.
-- Tab completa com o caminho (pasta ganha a barra final), Enter abre no app padrão.
+- `~` by itself lists the home directory. A trailing slash lists the whole directory.
+- Hidden files appear only when the query starts with a dot.
+- At most 500 directory entries are read asynchronously.
+- Tab completes the path (directories get a trailing slash); Enter opens it in the default app.
 
-## Captura do atalho nas preferências
+## Shortcut capture in Preferences
 
-Esc cancela, Backspace deixa sem atalho, tecla modificadora sozinha espera a próxima tecla.
-Letra sem Super, Ctrl ou Alt é recusada (Shift sozinho só faz maiúscula). Tecla de função
-sozinha (F1 a F12) vale.
+Esc cancels, Backspace clears the shortcut, and pressing a modifier by itself waits for the next key. A letter without Super, Ctrl, or Alt is rejected (Shift alone only makes it uppercase). A function key by itself (F1 to F12) is accepted.
