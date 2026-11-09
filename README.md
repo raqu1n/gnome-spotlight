@@ -19,7 +19,7 @@ Feita para o GNOME Shell 50 e 51.
 | `bloquear`, `suspender` | Ações do sistema (bloquear, suspender, reiniciar, desligar, sair) |
 
 Teclas: setas navegam, Enter abre, Tab completa caminho, Esc limpa o texto e o segundo Esc fecha.
-Clicar fora da janela também fecha.
+Clicar fora da janela ou pressionar o atalho novamente também fecha, mesmo com texto na busca.
 
 A janela abre centralizada no monitor onde está o ponteiro, com o topo a 25% da altura. Com o Blur my
 Shell ativo (componente de popups), o painel fica translúcido e desfocado como os outros

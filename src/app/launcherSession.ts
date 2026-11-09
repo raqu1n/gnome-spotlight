@@ -61,8 +61,15 @@ export class LauncherSession {
       SettingsKey.TOGGLE_LAUNCHER,
       this.settings,
       Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
-      Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW,
-      () => this.overlay.toggle(),
+      Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW | Shell.ActionMode.SYSTEM_MODAL,
+      () => {
+        if (
+          (Main.actionMode as Shell.ActionMode) === Shell.ActionMode.SYSTEM_MODAL &&
+          !this.overlay.isOpen
+        )
+          return;
+        this.overlay.toggle();
+      },
     );
   }
 
